@@ -1,0 +1,4 @@
+checkpoints
+lightning_logs
+dataset/*
+__pycache__
