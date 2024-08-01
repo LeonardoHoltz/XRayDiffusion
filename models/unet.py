@@ -84,10 +84,11 @@ class EmbedFC(nn.Module):
             nn.GELU(),
             nn.Linear(emb_dim, emb_dim),
         ]
-        self.model = nn.Sequential(*layers)
+        self.model = nn.Sequential(*layers).to("cuda")
 
     def forward(self, x):
         x = x.view(-1, self.input_dim)
+        x = x.to("cuda")
         return self.model(x)
 
 

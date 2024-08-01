@@ -61,6 +61,8 @@ class LightningDDPM(L.LightningModule):
         
         # log outputs
         self.training_loss = []
+        
+        self.save_hyperparameters()
     
     # Optimizer
     def configure_optimizers(self):
@@ -119,8 +121,13 @@ class LightningDDPM(L.LightningModule):
         
         # Return the MSE loss between noise and the predicted noise
         loss = self.loss_mse(noise, scores)
-        self.training_loss.append(loss)
+        self.training_loss.append(loss.item())
+        return loss
 
+    def on_train_batch_start(self, batch, batch_idx):
+        torch.cuda.empty_cache()
+        
+    
     def show_epoch_results(self, metrics_dict, mode="train") -> None:
         print_result = f"{mode} results:"
         for key, value in metrics_dict.items():
@@ -130,7 +137,7 @@ class LightningDDPM(L.LightningModule):
     # Epoch callbacks
     def on_train_epoch_end(self) -> None:
         # Concat results
-        loss = torch.stack(self.training_loss).mean()
+        loss = torch.tensor(self.training_loss).mean()
 
         # clean outputs
         self.training_loss.clear()
@@ -142,7 +149,6 @@ class LightningDDPM(L.LightningModule):
             metrics, logger=self.logger, on_step=False, on_epoch=True, prog_bar=False
         )
         self.show_epoch_results(metrics)
-        torch.cuda.empty_cache()
     
     def _sampling_step(self, size, y, t=0, guide_w=0.0):
         """
@@ -156,15 +162,15 @@ class LightningDDPM(L.LightningModule):
             y: Class label of the image to be sampled
             t: Level t of image to be sampled
         """
-        y = torch.tensor([y])
+        y = torch.tensor([y], device="cuda")
         
         # Set initial noise
-        z_T = torch.randn(1, *size)
+        z_T = torch.randn(1, *size, device="cuda")
         
         # Don't drop context at test time
-        context_mask = torch.zeros_like(y)
+        context_mask = torch.zeros_like(y, device="cuda")
         
-        t_ratio = torch.tensor([t / self.n_T])
+        t_ratio = torch.tensor([t / self.n_T], device="cuda")
         t_ratio = t_ratio.repeat(1, 1, 1, 1)
         
         # double the batch
@@ -174,7 +180,7 @@ class LightningDDPM(L.LightningModule):
         z_T = z_T.repeat(2, 1, 1, 1)
         t_ratio = t_ratio.repeat(2, 1, 1, 1)
         
-        z = torch.randn(1, *size) if t > 1 else 0
+        z = torch.randn(1, *size, device="cuda") if t > 1 else 0
         
         eps = self.forward(z_T, y, t_ratio, context_mask)
         eps1 = eps[:1]

@@ -7,7 +7,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from models.ddpm import LightningDDPM
 from models.unet import ContextUnet
-from dataset import ChestXRayDataModule
+from datamodules.chest_x_ray_dataset import ChestXRayDataModule
 import config
 from torchinfo import summary
 
@@ -27,7 +27,7 @@ def main():
     )
     
     # Initialize network
-    internal_model = ContextUnet(in_channels=1, n_feat=config.N_FEATURES, n_classes=config.NUM_CLASSES)
+    internal_model = ContextUnet(in_channels=1, n_feat=config.N_FEATURES, n_classes=config.NUM_CLASSES).to(device)
     
     model = LightningDDPM(
         nn_model=internal_model,

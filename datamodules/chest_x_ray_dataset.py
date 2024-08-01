@@ -36,13 +36,14 @@ class ChestXRayDatasetPerLabel(ChestXRayDataset):
 
 class ChestXRayDataModule(L.LightningDataModule):
     
-    def __init__(self, data_dir, batch_size, num_workers, mode='classification'):
+    def __init__(self, data_dir, batch_size, num_workers, mode='classification', device='cuda'):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.image_shape = (28, 28)
+        self.image_shape = (224, 224)
         self.training_mode = mode
+        self.device = device
 
     def prepare_data(self) -> None:
         # download, IO, etc. Useful with shared filesystems
@@ -53,6 +54,7 @@ class ChestXRayDataModule(L.LightningDataModule):
         # make assignments here (val/train/test split)
         # called on every process in DDP
         entire_dataset = load_dataset(self.data_dir)
+        entire_dataset['train']
         
         # Transform to be used
         transform = transforms.Compose([

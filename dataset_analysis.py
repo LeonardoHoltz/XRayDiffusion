@@ -1,9 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
-from dataset import get_dataloaders_by_label, get_dataloader_from_hf
+from datamodules.chest_x_ray_dataset import get_dataloaders_by_label, get_dataloader_from_hf
 from tqdm import tqdm
-
-
 
 def show_images(images, labels, classes, n_images=5):
     plt.figure(figsize=(15, 5))
