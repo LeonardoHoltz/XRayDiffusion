@@ -1,4 +1,5 @@
 checkpoints
+images
 lightning_logs
 dataset/*
 __pycache__

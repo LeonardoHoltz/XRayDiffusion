@@ -5,7 +5,7 @@ from lightning.pytorch.callbacks import RichProgressBar, RichModelSummary
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from model import MnistSimpleModel
-from dataset import ChestXRayDataModule
+from datamodules.chest_x_ray_dataset import ChestXRayDataModule
 import config
 
 def main():
