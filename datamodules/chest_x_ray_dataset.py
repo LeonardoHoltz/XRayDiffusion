@@ -7,18 +7,23 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data import random_split
 
 class ChestXRayDataset(Dataset):
-    def __init__(self, dataset, transform=None):
+    def __init__(self, dataset, target_shape, transform_resize=None, transform_padding=None):
         self.dataset = dataset
-        self.transform = transform
-
+        self.transform_resize = transform_resize
+        self.transform_padding = transform_padding
+        self.target_shape = target_shape
+        
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
         image = self.dataset[idx]['image']
         label = self.dataset[idx]['label']
-        if self.transform:
-            image = self.transform(image)
+        if self.transform_resize and self.transform_padding:
+            if image.size[-2] < self.target_shape[0] and image.size[-1] < self.target_shape[1]:
+                image = self.transform_padding(image)
+            else:
+                image = self.transform_resize(image)
         return image, label
 
 class ChestXRayDatasetPerLabel(ChestXRayDataset):
@@ -57,11 +62,15 @@ class ChestXRayDataModule(L.LightningDataModule):
         entire_dataset['train']
         
         # Transform to be used
-        transform = transforms.Compose([
+        transform_resize = transforms.Compose([
             transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
             transforms.Resize((self.image_shape[0], self.image_shape[1])),
-            transforms.Normalize((0.5), (0.5)),
+        ])
+        transform_padding = transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+            transforms.CenterCrop((self.image_shape[0], self.image_shape[1])),
         ])
         
         # The split will be conducted as:
@@ -79,10 +88,10 @@ class ChestXRayDataModule(L.LightningDataModule):
         
         # split the train dataset into 90% train and 10% validation
         train_val_split = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label')
-        self.diffusion_dataset = ChestXRayDataset(diffusion_dataset, transform)
-        self.train_dataset = ChestXRayDataset(train_val_split['train'], transform)
-        self.val_dataset = ChestXRayDataset(train_val_split['test'], transform)
-        self.test_dataset = ChestXRayDataset(test_dataset, transform)
+        self.diffusion_dataset = ChestXRayDataset(diffusion_dataset, self.image_shape, transform_resize, transform_padding)
+        self.train_dataset = ChestXRayDataset(train_val_split['train'], self.image_shape, transform_resize, transform_padding)
+        self.val_dataset = ChestXRayDataset(train_val_split['test'], self.image_shape, transform_resize, transform_padding)
+        self.test_dataset = ChestXRayDataset(test_dataset, self.image_shape, transform_resize, transform_padding)
 
     def set_training_mode(self, mode="classification"):
         if mode in ['classification', 'diffusion']:
