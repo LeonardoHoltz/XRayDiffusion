@@ -8,6 +8,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from models.ddpm import LightningDDPM
 from models.unet import ContextUnet
 from datamodules.chest_x_ray_dataset import ChestXRayDataModule
+from datamodules.mnist_dataset import MnistDataModule
 import config
 from torchinfo import summary
 
@@ -19,11 +20,16 @@ def main():
     logger = TensorBoardLogger("tb_logs, ")
     
     # Datamodule
-    datamodule = ChestXRayDataModule(
+    #datamodule = ChestXRayDataModule(
+    #    data_dir=config.DATA_DIR,
+    #    batch_size=config.BATCH_SIZE,
+    #    num_workers=config.NUM_WORKERS,
+    #    mode='diffusion'
+    #)
+    datamodule = MnistDataModule(
         data_dir=config.DATA_DIR,
         batch_size=config.BATCH_SIZE,
         num_workers=config.NUM_WORKERS,
-        mode='diffusion'
     )
     
     # Initialize network

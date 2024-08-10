@@ -1,0 +1,4 @@
+monai-weekly[tqdm]
+monai-generative
+matplotlib
+scikit-learn
