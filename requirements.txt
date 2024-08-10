@@ -1,3 +1,4 @@
+lightning
 datasets
 monai-generative
 matplotlib
