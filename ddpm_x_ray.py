@@ -337,8 +337,8 @@ def main():
                 noise = torch.randn((1, 1, 224, 224))
                 noise = noise.to(device)
                 scheduler.set_timesteps(num_inference_steps=1000)
-                label_0 = torch.tensor([[0]])
-                label_1 = torch.tensor([[1]])
+                label_0 = torch.tensor([0]).to(device)
+                label_1 = torch.tensor([1]).to(device)
                 with autocast(enabled=True):
                     image_0 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler)
                     image_1 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler)
