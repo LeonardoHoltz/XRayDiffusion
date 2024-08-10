@@ -36,56 +36,6 @@ from sklearn.model_selection import train_test_split as sk_train_test_split
 from PIL import Image
 import config
 
-def to_grayscale(image):
-    if len(image.shape) == 3 and image.shape[-1] == 3:
-        return np.mean(image, axis=-1, keepdims=True)
-    return image
-
-def set_dataset_as_csv_dataset(seed):
-    base_dir = 'dataset/chest_xray'
-    output_dir = 'dataset/chest_xray_all'
-    if not os.path.exists(output_dir):
-        
-        sub_dirs = ['train', 'test', 'val']
-        categories = ['NORMAL', 'PNEUMONIA']
-    
-        os.makedirs(output_dir)
-    
-        data = []
-        
-        for sub_dir in sub_dirs:
-            for category in categories:
-                category_path = os.path.join(base_dir, sub_dir, category)
-                files = os.listdir(category_path)
-                
-                for file_name in files:
-                    if file_name.endswith(('.png', '.jpg', 'jpeg', '.tiff')):
-                        file_path = os.path.join(category_path, file_name)
-                        image = Image.open(file_path).convert('L')
-                        dest_file_path = os.path.join(output_dir, file_name)
-                        image.save(dest_file_path)                    
-                        label = 0 if category == 'NORMAL' else 1
-                        data.append([dest_file_path, label])
-        df = pd.DataFrame(data, columns=['image', 'label'])
-        
-        # split the classification into train val and test
-        # 50% for the diffusion model training
-        # 30% for the classification model training
-        # 10% for the classification model validation
-        # 10% for the classification model testing
-        diffusion_df, classification_df = sk_train_test_split(df, test_size=0.5, stratify=df['label'], random_state=seed)
-        classif_train_df, classif_test_df = sk_train_test_split(classification_df, test_size=0.2, stratify=classification_df['label'], random_state=seed)
-        classif_train_df, classif_val_df = sk_train_test_split(classif_train_df, test_size=0.25, stratify=classif_train_df['label'], random_state=seed)
-        
-        diffusion_csv_path = os.path.join(output_dir, 'diffusion_data.csv')
-        classif_train_csv_path = os.path.join(output_dir, 'classif_train_data.csv')
-        classif_test_csv_path = os.path.join(output_dir, 'classif_test_data.csv')
-        classif_val_csv_path = os.path.join(output_dir, 'classif_val_data.csv')
-        
-        diffusion_df.to_csv(diffusion_csv_path, index=False)
-        classif_train_df.to_csv(classif_train_csv_path, index=False)
-        classif_test_df.to_csv(classif_test_csv_path, index=False)
-        classif_val_df.to_csv(classif_val_csv_path, index=False)
 
 class ClassConditioningDiffusionInferer(DiffusionInferer):
     def __init__(self, scheduler: Module) -> None:
