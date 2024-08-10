@@ -319,6 +319,7 @@ def main():
                 val_epoch_loss = 0
                 for step, batch in enumerate(diffusion_val_dataloader):
                     images = batch[0].to(device)
+                    labels = batch[1].to(device)
                     with torch.no_grad():
                         with autocast(enabled=True):
                             noise = torch.randn_like(images).to(device)
@@ -336,11 +337,11 @@ def main():
                 noise = torch.randn((1, 1, 224, 224))
                 noise = noise.to(device)
                 scheduler.set_timesteps(num_inference_steps=1000)
-                label_0 = torch.tensor([0])
-                label_1 = torch.tensor([1])
+                label_0 = torch.tensor([[0]])
+                label_1 = torch.tensor([[1]])
                 with autocast(enabled=True):
-                    image_0 = inferer.sample(input_noise=noise, diffusion_model=model, classes=label_0, scheduler=scheduler)
-                    image_1 = inferer.sample(input_noise=noise, diffusion_model=model, classes=label_1, scheduler=scheduler)
+                    image_0 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler)
+                    image_1 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler)
 
                 plt.figure(figsize=(2, 2))
                 plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
