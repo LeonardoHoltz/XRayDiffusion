@@ -78,16 +78,16 @@ class ChestXRayDataModule(L.LightningDataModule):
         # 30% for the classification model training
         # 10% for the classification model validation
         # 10% for the classification model testing
-        diffusion_classification_split = entire_dataset['train'].train_test_split(test_size=0.5, stratify_by_column='label')
+        diffusion_classification_split = entire_dataset['train'].train_test_split(test_size=0.5, stratify_by_column='label', seed=69)
         diffusion_dataset = diffusion_classification_split['train']
         classification_dataset = diffusion_classification_split['test']
         
-        classification_train_test_split = classification_dataset.train_test_split(test_size=0.2, stratify_by_column='label')
+        classification_train_test_split = classification_dataset.train_test_split(test_size=0.2, stratify_by_column='label', seed=69)
         train_dataset = classification_train_test_split['train']
         test_dataset = classification_train_test_split['test']
         
         # split the train dataset into 90% train and 10% validation
-        train_val_split = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label')
+        train_val_split = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label', seed=69)
         self.diffusion_dataset = ChestXRayDataset(diffusion_dataset, self.image_shape, transform_resize, transform_padding)
         self.train_dataset = ChestXRayDataset(train_val_split['train'], self.image_shape, transform_resize, transform_padding)
         self.val_dataset = ChestXRayDataset(train_val_split['test'], self.image_shape, transform_resize, transform_padding)
