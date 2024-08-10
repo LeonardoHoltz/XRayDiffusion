@@ -8,8 +8,8 @@ BETAS = (1e-4, 0.02)
 N_T = 500
 
 # Dataset
-#DATA_DIR = "AiresPucrs/chest-xray"
-DATA_DIR = "dataset"
+DATA_DIR = "AiresPucrs/chest-xray"
+#DATA_DIR = "dataset"
 NUM_WORKERS = 2
 BATCH_SIZE = 16
 
