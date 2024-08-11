@@ -304,13 +304,13 @@ def main():
                 plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
                 plt.axis('off')
                 plt.tight_layout()
-                plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_0.jpg")
+                plt.savefig(f"training_sample_images/class_0/sample_epoch_{epoch}.jpg")
 
                 plt.figure(frameon=False)
                 plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
                 plt.axis('off')
                 plt.tight_layout()
-                plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_1.jpg")
+                plt.savefig(f"training_sample_images/class_1/sample_epoch_{epoch}.jpg")
 
         total_time = time.time() - total_start
         print(f"train completed, total time: {total_time}.")
