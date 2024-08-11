@@ -294,17 +294,18 @@ def main():
                     image_0 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler)
                     image_1 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler)
 
+                os.makedirs("training_sample_images", exist_ok=True)
                 plt.figure()
                 plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
                 plt.axis('off')
                 plt.tight_layout()
-                plt.savefig(f"sample_class_0_epoch_{epoch}.jpg")
+                plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_0.jpg")
 
                 plt.figure()
                 plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
                 plt.axis('off')
                 plt.tight_layout()
-                plt.savefig(f"sample_class_1_epoch_{epoch}.jpg")
+                plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_1.jpg")
 
         total_time = time.time() - total_start
         print(f"train completed, total time: {total_time}.")
