@@ -209,6 +209,7 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch_loss_list = checkpoint['epoch_loss_list']
+        val_epoch_loss_list = checkpoint['val_epoch_loss_list']
     else:
         n_epochs = 75
         val_interval = 5
@@ -260,6 +261,7 @@ def main():
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'epoch_loss_list': epoch_loss_list,
+                    'val_epoch_loss_list': val_epoch_loss_list,
                 },
                 f'checkpoints/diffusion_model_epoch_{epoch}.pt'
             )
@@ -295,14 +297,16 @@ def main():
                     image_1 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler)
 
                 os.makedirs("training_sample_images", exist_ok=True)
-                plt.figure()
-                plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
+                os.makedirs("training_sample_images/class_0", exist_ok=True)
+                os.makedirs("training_sample_images/class_1", exist_ok=True)
+                plt.figure(frameon=False)
+                plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
                 plt.axis('off')
                 plt.tight_layout()
                 plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_0.jpg")
 
-                plt.figure()
-                plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
+                plt.figure(frameon=False)
+                plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
                 plt.axis('off')
                 plt.tight_layout()
                 plt.savefig(f"training_sample_images/sample_epoch_{epoch}_class_1.jpg")
@@ -312,6 +316,7 @@ def main():
 
     # ### Learning curves
     if not use_pretrained:
+        plt.figure(frameon=False)
         plt.style.use("seaborn-v0_8")
         plt.title("Learning Curves", fontsize=20)
         plt.plot(np.linspace(1, n_epochs, n_epochs), epoch_loss_list, color="C0", linewidth=2.0, label="Train")
@@ -327,25 +332,42 @@ def main():
         plt.xlabel("Epochs", fontsize=16)
         plt.ylabel("Loss", fontsize=16)
         plt.legend(prop={"size": 14})
-        plt.show()
+        plt.imshow(aspect='auto')
+        plt.savefig("learning_curves.jpg")
 
     # ### Plotting sampling process along DDPM's Markov chain
     model.eval()
     noise = torch.randn((1, 1, 64, 64))
     noise = noise.to(device)
     scheduler.set_timesteps(num_inference_steps=1000)
-    with autocast(enabled=True):
-        image, intermediates = inferer.sample(
-            input_noise=noise, diffusion_model=model, scheduler=scheduler, save_intermediates=True, intermediate_steps=100
+    label_0 = torch.tensor([0]).to(device)
+    label_1 = torch.tensor([1]).to(device)
+    with autocast(device_type="cuda", enabled=True):
+        image_0, intermediates_0 = inferer.sample(
+            input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler, save_intermediates=True, intermediate_steps=10
+        )
+        image_1, intermediates_1 = inferer.sample(
+            input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler, save_intermediates=True, intermediate_steps=10
         )
 
-    chain = torch.cat(intermediates, dim=-1)
+    chain_0 = torch.cat(intermediates_0, dim=-1)
+    chain_1 = torch.cat(intermediates_1, dim=-1)
 
+    plt.figure(frameon=False)
     plt.style.use("default")
-    plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
+    plt.imshow(chain_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
     plt.axis("off")
-    plt.show()
+    plt.imshow(aspect='auto')
+    plt.savefig("chain_0.jpg")
+
+    plt.figure(frameon=False)
+    plt.style.use("default")
+    plt.imshow(chain_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
+    plt.tight_layout()
+    plt.axis("off")
+    plt.imshow(aspect='auto')
+    plt.savefig("chain_1.jpg")
 
 
     # ### Cleanup data directory
