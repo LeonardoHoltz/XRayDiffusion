@@ -229,7 +229,7 @@ def main():
                 
                 optimizer.zero_grad(set_to_none=True)
 
-                with autocast(enabled=True):
+                with autocast(device_type="cuda", enabled=True):
                     # Generate random noise
                     noise = torch.randn_like(images).to(device)
 
@@ -271,7 +271,7 @@ def main():
                     images = batch[0].to(device)
                     labels = batch[1].to(device)
                     with torch.no_grad():
-                        with autocast(enabled=True):
+                        with autocast(device_type="cuda", enabled=True):
                             noise = torch.randn_like(images).to(device)
                             timesteps = torch.randint(
                                 0, inferer.scheduler.num_train_timesteps, (images.shape[0],), device=images.device
@@ -289,18 +289,16 @@ def main():
                 scheduler.set_timesteps(num_inference_steps=1000)
                 label_0 = torch.tensor([0]).to(device)
                 label_1 = torch.tensor([1]).to(device)
-                with autocast(enabled=True):
+                with autocast(device_type="cuda", enabled=True):
                     image_0 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler)
                     image_1 = inferer.sample(input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler)
 
-                plt.figure(figsize=(2, 2))
                 plt.imshow(image_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
                 plt.tight_layout()
                 plt.axis("off")
                 plt.show()
                 plt.savefig(f"sample_class_0_epoch_{epoch}.jpg")
                 
-                plt.figure(figsize=(2, 2))
                 plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
                 plt.tight_layout()
                 plt.axis("off")
