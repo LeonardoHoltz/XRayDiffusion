@@ -1,10 +1,11 @@
 from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 import torch
 import lightning as L
-from lightning.pytorch.callbacks import RichProgressBar, RichModelSummary
+from lightning.pytorch.callbacks import RichProgressBar, RichModelSummary, EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from model import MnistSimpleModel
+from models.vgg16 import VGG16
 from datamodules.chest_x_ray_dataset import ChestXRayDataModule
 import config
 
@@ -17,14 +18,11 @@ def main():
         data_dir=config.DATA_DIR,
         batch_size=config.BATCH_SIZE,
         num_workers=config.NUM_WORKERS,
+        device=device,
     )
     
     # Initialize network
-    model = MnistSimpleModel(
-        input_size=config.INPUT_SIZE,
-        num_classes=config.NUM_CLASSES,
-        learning_rate=config.LEARNING_RATE
-    ).to(device)
+    model = VGG16(1, datamodule.image_shape).to(device)
 
     # Trainer
     trainer = L.Trainer(
@@ -33,7 +31,11 @@ def main():
         min_epochs=1,
         max_epochs=config.NUM_EPOCHS,
         precision=config.PRECISION,
-        callbacks=[RichProgressBar(leave=True), RichModelSummary()],
+        callbacks=[
+            RichProgressBar(leave=True), 
+            RichModelSummary(),
+            EarlyStopping(monitor="val_accuracy", min_delta=0.001, patience=5, mode="max"),
+        ],
     )
     
     # Training and evaluation
@@ -42,6 +44,8 @@ def main():
     trainer.test(model, datamodule)
 
     # TODO: Qualitative prediction results
+    
+    torch.save(model.state_dict(), "weights/vgg16_weights_dataset.pth")
     
 
 if __name__ == "__main__":
