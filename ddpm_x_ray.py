@@ -299,7 +299,7 @@ def main():
                 plt.axis('off')
                 plt.tight_layout()
                 plt.savefig(f"sample_class_0_epoch_{epoch}.jpg")
-                
+
                 plt.figure()
                 plt.imshow(image_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
                 plt.axis('off')
