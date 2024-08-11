@@ -199,7 +199,8 @@ def main():
     #
     # If you would like to skip the training and use a pre-trained model instead, set `use_pretrained=True`.
     # This model was trained using the code in `MonaiGenerativeModels/tutorials/generative/distributed_training/ddpm_training_ddp.py`
-
+    os.makedirs("checkpoints", exist_ok=True)
+    
     use_pretrained = False
 
     if use_pretrained:
