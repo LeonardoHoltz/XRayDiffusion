@@ -34,7 +34,7 @@ import pdb
 import shutil
 from sklearn.model_selection import train_test_split as sk_train_test_split
 from PIL import Image
-import config
+import config_diffusion as config
 
 
 class ClassConditioningDiffusionInferer(DiffusionInferer):
