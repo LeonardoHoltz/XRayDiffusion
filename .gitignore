@@ -2,4 +2,5 @@ checkpoints
 images
 lightning_logs
 dataset/*
+classification_sample/
 __pycache__
