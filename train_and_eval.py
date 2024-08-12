@@ -34,7 +34,7 @@ def main():
         callbacks=[
             RichProgressBar(leave=True), 
             RichModelSummary(),
-            EarlyStopping(monitor="val_accuracy", min_delta=0.001, patience=5, mode="max"),
+            EarlyStopping(monitor="val/accuracy", patience=8, mode="max"),
         ],
     )
     

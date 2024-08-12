@@ -152,10 +152,6 @@ class VGG16(L.LightningModule):
     # Compute and log metrics
     metrics = self._compute_metrics(scores, y, "val")
     metrics["val/loss"] = loss
-
-    # Log metrics for early stopping
-    self.log("val_accuracy", metrics["val/accuracy"])
-
     if not self.trainer.sanity_checking:
       self.log_dict(
         metrics,
