@@ -6,8 +6,13 @@ import config
 from tqdm import tqdm
 import lightning as L
 from lightning.pytorch.callbacks import RichProgressBar, RichModelSummary, EarlyStopping
+from lightning.pytorch.loggers import WandbLogger
+import wandb
+
 
 def main():
+    logger = WandbLogger(project='XRayClassifier', log_model='all')
+    wandb.login()
     
     datamodule = ChestXRayDataModule(
         data_dir=config.DATA_DIR,
@@ -27,6 +32,8 @@ def main():
         min_epochs=1,
         max_epochs=config.NUM_EPOCHS,
         precision=config.PRECISION,
+        logger=logger,
+        log_every_n_steps=0,
         callbacks=[
             RichProgressBar(leave=True), 
             RichModelSummary(),

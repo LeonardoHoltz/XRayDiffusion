@@ -1,6 +1,7 @@
 checkpoints
 images
 lightning_logs
+wandb
 dataset/*
 classification_sample/
 __pycache__
