@@ -333,7 +333,6 @@ def main():
         plt.xlabel("Epochs", fontsize=16)
         plt.ylabel("Loss", fontsize=16)
         plt.legend(prop={"size": 14})
-        plt.imshow(aspect='auto')
         plt.savefig("learning_curves.jpg")
 
     # ### Plotting sampling process along DDPM's Markov chain

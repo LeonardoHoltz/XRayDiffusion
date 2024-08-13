@@ -1,10 +1,10 @@
-#import torchvision.datasets as datasets
-from enum import Enum
+import torch
 from datasets import load_dataset
 import torchvision.transforms as transforms
 import lightning as L
 from torch.utils.data import DataLoader, Dataset
-from torch.utils.data import random_split
+from torch.utils.data import random_split, ConcatDataset
+from torchvision.datasets import ImageFolder
 
 class ChestXRayDataset(Dataset):
     def __init__(self, dataset, target_shape, transform_resize=None, transform_padding=None):
@@ -49,6 +49,7 @@ class ChestXRayDataModule(L.LightningDataModule):
         self.image_shape = (224, 224)
         self.training_mode = mode
         self.device = device
+        self.use_diffusion_sample = False
 
     def prepare_data(self) -> None:
         # download, IO, etc. Useful with shared filesystems
@@ -92,7 +93,21 @@ class ChestXRayDataModule(L.LightningDataModule):
         self.train_dataset = ChestXRayDataset(train_val_split['train'], self.image_shape, transform_resize, transform_padding)
         self.val_dataset = ChestXRayDataset(train_val_split['test'], self.image_shape, transform_resize, transform_padding)
         self.test_dataset = ChestXRayDataset(test_dataset, self.image_shape, transform_resize, transform_padding)
-
+        
+        if self.use_diffusion_sample:
+            self.merge_original_sampled_datasets('classification_sample')
+        
+    def use_sampled_data(self, use_sample=True):
+        self.use_diffusion_sample = use_sample
+    
+    def merge_original_sampled_datasets(self, sampled_images_folder):
+        transform_sample = transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
+            transforms.ToTensor(),
+        ])
+        sampled_dataset = ImageFolder(root=sampled_images_folder, transform=transform_sample)
+        self.train_dataset = ConcatDataset([self.train_dataset, sampled_dataset])
+    
     def set_training_mode(self, mode="classification"):
         if mode in ['classification', 'diffusion']:
             self.training_mode = mode
