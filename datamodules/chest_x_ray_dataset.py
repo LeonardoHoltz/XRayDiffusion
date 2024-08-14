@@ -2,9 +2,10 @@ import torch
 from datasets import load_dataset
 import torchvision.transforms as transforms
 import lightning as L
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 from torch.utils.data import random_split, ConcatDataset
 from torchvision.datasets import ImageFolder
+from sklearn.model_selection import train_test_split
 
 class ChestXRayDataset(Dataset):
     def __init__(self, dataset, target_shape, transform_resize=None, transform_padding=None):
@@ -41,7 +42,7 @@ class ChestXRayDatasetPerLabel(ChestXRayDataset):
 
 class ChestXRayDataModule(L.LightningDataModule):
     
-    def __init__(self, data_dir, batch_size, num_workers, mode='classification', device='cuda'):
+    def __init__(self, data_dir, batch_size, num_workers, mode='classification', device='cuda', seed=69, reduce_train="No"):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
@@ -50,6 +51,8 @@ class ChestXRayDataModule(L.LightningDataModule):
         self.training_mode = mode
         self.device = device
         self.use_diffusion_sample = False
+        self.reduce_train = reduce_train
+        self.seed = seed
 
     def prepare_data(self) -> None:
         # download, IO, etc. Useful with shared filesystems
@@ -79,33 +82,45 @@ class ChestXRayDataModule(L.LightningDataModule):
         # 30% for the classification model training
         # 10% for the classification model validation
         # 10% for the classification model testing
-        diffusion_classification_split = entire_dataset['train'].train_test_split(test_size=0.5, stratify_by_column='label', seed=69)
+        diffusion_classification_split = entire_dataset['train'].train_test_split(test_size=0.5, stratify_by_column='label', seed=self.seed)
         diffusion_dataset = diffusion_classification_split['train']
         classification_dataset = diffusion_classification_split['test']
         
-        classification_train_test_split = classification_dataset.train_test_split(test_size=0.2, stratify_by_column='label', seed=69)
+        classification_train_test_split = classification_dataset.train_test_split(test_size=0.2, stratify_by_column='label', seed=self.seed)
         train_dataset = classification_train_test_split['train']
         test_dataset = classification_train_test_split['test']
         
-        # split the train dataset into 90% train and 10% validation
-        train_val_split = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label', seed=69)
-        self.diffusion_dataset = ChestXRayDataset(diffusion_dataset, self.image_shape, transform_resize, transform_padding)
-        self.train_dataset = ChestXRayDataset(train_val_split['train'], self.image_shape, transform_resize, transform_padding)
-        self.val_dataset = ChestXRayDataset(train_val_split['test'], self.image_shape, transform_resize, transform_padding)
-        self.test_dataset = ChestXRayDataset(test_dataset, self.image_shape, transform_resize, transform_padding)
-        
-        if self.use_diffusion_sample:
+        train_val_split = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label', seed=self.seed)
+        train_dataset = train_val_split['train']
+        val_dataset = train_val_split['train']
+        if self.reduce_train == "Reduce":
+            train_dataset = train_dataset.train_test_split(test_size=0.25, stratify_by_column='label', seed=self.seed)['test']
+            self.train_dataset = ChestXRayDataset(train_dataset, self.image_shape, transform_resize, transform_padding)
+        if self.reduce_train == "Reduce to merge":
+            train_dataset = train_dataset.train_test_split(test_size=0.125, stratify_by_column='label', seed=self.seed)['test']
+            self.train_dataset = ChestXRayDataset(train_dataset, self.image_shape, transform_resize, transform_padding)
             self.merge_original_sampled_datasets('classification_sample')
-        
-    def use_sampled_data(self, use_sample=True):
-        self.use_diffusion_sample = use_sample
+        elif self.reduce_train == "Use Sample Only":
+            self.train_dataset = self.create_sampled_dataset('classification_sample')
+        elif self.reduce_train == "Merge Only":
+            self.train_dataset = ChestXRayDataset(train_dataset, self.image_shape, transform_resize, transform_padding)
+            self.merge_original_sampled_datasets('classification_sample')
+        else:
+            self.train_dataset = ChestXRayDataset(train_dataset, self.image_shape, transform_resize, transform_padding)
+
+        self.diffusion_dataset = ChestXRayDataset(diffusion_dataset, self.image_shape, transform_resize, transform_padding)
+        self.val_dataset = ChestXRayDataset(val_dataset, self.image_shape, transform_resize, transform_padding)
+        self.test_dataset = ChestXRayDataset(test_dataset, self.image_shape, transform_resize, transform_padding)
     
-    def merge_original_sampled_datasets(self, sampled_images_folder):
+    def create_sampled_dataset(self, sampled_images_folder):
         transform_sample = transforms.Compose([
             transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
         ])
-        sampled_dataset = ImageFolder(root=sampled_images_folder, transform=transform_sample)
+        return ImageFolder(root=sampled_images_folder, transform=transform_sample)
+        
+    def merge_original_sampled_datasets(self, sampled_images_folder):
+        sampled_dataset = self.create_sampled_dataset(sampled_images_folder)
         self.train_dataset = ConcatDataset([self.train_dataset, sampled_dataset])
     
     def set_training_mode(self, mode="classification"):
