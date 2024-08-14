@@ -2,7 +2,6 @@ import os
 import torch
 import lightning as L
 
-from models.ddpm import LightningDDPM
 from generative.networks.nets import DiffusionModelUNet
 from generative.networks.schedulers import DDPMScheduler
 from datamodules.chest_x_ray_dataset import ChestXRayDataModule

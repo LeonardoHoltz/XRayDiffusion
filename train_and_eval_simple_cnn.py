@@ -14,14 +14,18 @@ def main():
     logger = WandbLogger(project='XRayClassifier', log_model='all')
     wandb.login()
     
+    # 'Reduce to merge': reduce training data: 50% sampled and 50% original (TRAINED)
+    # 'Reduce': reduce training data and use only original training data
+    # 'Use Sample Only': Se only sampled data
+    # 'Merge Only': Only concatenates original with sampled (TRAINED)
+    # else: Use training data normally (TRAINED)
     datamodule = ChestXRayDataModule(
         data_dir=config.DATA_DIR,
         batch_size=config.BATCH_SIZE,
         num_workers=config.NUM_WORKERS,
+        reduce_train="Use Sample Only", 
     )
     datamodule.set_training_mode('classification')
-    # Use this when using sampled images from diffusion
-    datamodule.use_sampled_data(True)
     
     model = SimpleCNN(num_classes=2, learning_rate=0.0001)
     
