@@ -13,6 +13,13 @@ from torch.amp import autocast
 
 import matplotlib.pyplot as plt
 
+def save_image(image, image_name):
+    image = image.squeeze()
+    image_array = image.cpu().numpy() * 255.0
+    image_array = image_array.astype(np.uint8)
+    image_pil = Image.fromarray(image_array)
+    image_pil.save(image_name, format='JPEG')
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -46,21 +53,23 @@ def main():
     label_1 = torch.tensor([1]).to(device)
     with autocast(device_type="cuda", enabled=True):
         image_0, intermediates_0 = inferer.sample(
-            input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler, save_intermediates=True, intermediate_steps=200
+            input_noise=noise, diffusion_model=model, class_label=label_0, scheduler=scheduler, save_intermediates=True, intermediate_steps=50
         )
         image_1, intermediates_1 = inferer.sample(
-            input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler, save_intermediates=True, intermediate_steps=200
+            input_noise=noise, diffusion_model=model, class_label=label_1, scheduler=scheduler, save_intermediates=True, intermediate_steps=50
         )
 
-    chain_0 = torch.cat(intermediates_0, dim=-1)
-    chain_1 = torch.cat(intermediates_1, dim=-1)
+    chain_0 = torch.cat(intermediates_0[15:], dim=-1)
+    chain_1 = torch.cat(intermediates_1[15:], dim=-1)
 
+    save_image(chain_0[0, 0].cpu(), 'chain0.jpg')
     plt.figure(frameon=False)
     plt.style.use("default")
     plt.imshow(chain_0[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
     plt.axis("off")
     plt.savefig("chain_0.jpg")
-
+    
+    save_image(chain_1[0, 0].cpu(), 'chain1.jpg')
     plt.figure(frameon=False)
     plt.style.use("default")
     plt.imshow(chain_1[0, 0].cpu(), vmin=0, vmax=1, cmap="gray", aspect='auto')
